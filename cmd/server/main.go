@@ -1,14 +1,30 @@
 package main
 
-import "net/http"
+import (
+	"os"
+
+	"github.com/storyscript/login/gh"
+	"github.com/storyscript/login/http"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
+)
 
 func main() {
-	http.HandleFunc("/healthcheck", healthcheck)
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	ghClient := gh.Client{}
+	ghOAuthClient := gh.OAuthClient{
+		Config: &oauth2.Config{
+			ClientID:     os.Getenv("GH_CLIENT_ID"),
+			ClientSecret: os.Getenv("GH_CLIENT_SECRET"),
+			Scopes:       []string{"user:email"},
+			Endpoint:     github.Endpoint,
+		},
+	}
+	server := http.Server{
+		TokenProvider:   ghOAuthClient,
+		UserInfoFetcher: ghClient,
+	}
+
+	if err := server.Start(); err != nil {
 		panic(err)
 	}
-}
-
-func healthcheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
 }
