@@ -36,47 +36,22 @@ func (d Database) GetEmails() []string {
 }
 
 func (d Database) GetTokenByEmail(email string) string {
-	var (
-		ownerUUID string
-		token     string
-	)
+	ownerUUID := d.GetOwnerUUIDByEmail(email)
+	return d.getRow("SELECT secret FROM token_secrets INNER JOIN tokens ON token_secrets.token_uuid = tokens.uuid WHERE tokens.owner_uuid = $1;", ownerUUID)
+}
 
-	// Get uuid of the owner relating to the test email used
-	row := d.client.QueryRow("SELECT owner_uuid FROM owner_emails WHERE email = $1;", email)
+func (d Database) GetOwnerUUIDByEmail(email string) string {
+	return d.getRow("SELECT owner_uuid FROM owner_emails WHERE email = $1;", email)
+}
 
-	err := row.Scan(&ownerUUID)
-	if err == sql.ErrNoRows {
-		return ""
-	}
-	Expect(err).NotTo(HaveOccurred())
-
-	// Get the secret token for that owner
-	row = d.client.QueryRow("SELECT secret FROM token_secrets INNER JOIN tokens ON token_secrets.token_uuid = tokens.uuid WHERE tokens.owner_uuid = $1;", ownerUUID)
-
-	err = row.Scan(&token)
-	if err == sql.ErrNoRows {
-		return ""
-	}
-	Expect(err).NotTo(HaveOccurred())
-
-	return token
+func (d Database) GetTokenUUIDByOwnerUUID(ownerUUID string) string {
+	return d.getRow("SELECT uuid FROM owner_vcs WHERE owner_uuid = $1;", ownerUUID)
 }
 
 func (d Database) PurgeOwnerByEmail(email string) {
-	var (
-		ownerUUID    string
-		ownerVCSUUID string
-		tokenUUID    string
-	)
-
-	row := d.client.QueryRow("SELECT owner_uuid FROM owner_emails WHERE email = $1;", email)
-	Expect(row.Scan(&ownerUUID)).To(Succeed())
-
-	row = d.client.QueryRow("SELECT uuid FROM owner_vcs WHERE owner_uuid = $1;", ownerUUID)
-	Expect(row.Scan(&ownerVCSUUID)).To(Succeed())
-
-	row = d.client.QueryRow("SELECT uuid FROM tokens WHERE owner_uuid = $1;", ownerUUID)
-	Expect(row.Scan(&tokenUUID)).To(Succeed())
+	ownerUUID := d.GetOwnerUUIDByEmail(email)
+	tokenUUID := d.GetTokenUUIDByOwnerUUID(ownerUUID)
+	ownerVCSUUID := d.getRow("SELECT uuid FROM owner_vcs WHERE owner_uuid = $1;", ownerUUID)
 
 	var err error
 	_, err = d.client.Exec("DELETE FROM tokens WHERE uuid = $1;", tokenUUID)
@@ -87,4 +62,17 @@ func (d Database) PurgeOwnerByEmail(email string) {
 
 	_, err = d.client.Exec("DELETE FROM owners WHERE uuid = $1;", ownerUUID)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func (d Database) getRow(query string, param string) string {
+	row := d.client.QueryRow(query, param)
+
+	var result string
+	err := row.Scan(&result)
+	if err == sql.ErrNoRows {
+		return ""
+	}
+	Expect(err).NotTo(HaveOccurred())
+
+	return result
 }

@@ -3,7 +3,10 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/storyscript/login"
 )
 
@@ -17,7 +20,7 @@ type UserInfoFetcher interface {
 }
 
 type UserRepository interface {
-	Save(user login.User) error
+	Save(user login.User) (string, string, error)
 }
 
 type LoginHandler struct {
@@ -26,6 +29,12 @@ type LoginHandler struct {
 
 func (h LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.TokenProvider.GetConsentURL("random-state"), http.StatusFound)
+}
+
+type StoryscriptClaims struct {
+	jwt.StandardClaims
+	OwnerUUID string `json:"owner_uuid"`
+	TokenUUID string `json:"token_uuid"`
 }
 
 type CallbackHandler struct {
@@ -47,7 +56,33 @@ func (h CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	user.Name = "will"
 	user.OAuthToken = accessToken
 
-	_ = h.UserRepository.Save(user)
+	ownerUUID, tokenUUID, _ := h.UserRepository.Save(user)
 
-	w.Write([]byte(fmt.Sprintf("%v", user)))
+	claims := StoryscriptClaims{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    "storyscript",
+			IssuedAt:  time.Now().UTC().Unix(),
+			ExpiresAt: time.Now().Add(60 * 60 * 24 * 365).UTC().Unix(),
+		},
+		OwnerUUID: ownerUUID,
+		TokenUUID: tokenUUID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(os.Getenv("SECRET_KEY"))
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "storyscript-jwt",
+		Path:     "/",
+		Expires:  time.Now().Add(time.Hour * 24 * 365),
+		MaxAge:   60 * 60 * 24 * 365,
+		HttpOnly: true,
+
+		Value: tokenString,
+	})
 }
