@@ -1,6 +1,8 @@
 package acceptance_test
 
 import (
+	"fmt"
+	"os"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
@@ -15,6 +17,7 @@ var _ = Describe("Healthchecking", func() {
 
 	BeforeEach(func() {
 		cmd := exec.Command(serverPath)
+		cmd.Env = append(os.Environ(), fmt.Sprintf("DB_CONNECTION_STRING=%s", dbConnStr))
 		session = execBin(cmd)
 	})
 

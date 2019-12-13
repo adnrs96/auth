@@ -1,5 +1,11 @@
 package login
 
 type User struct {
-	Login string `json:"login"`
+	Service   string
+	ServiceID int
+
+	Username   string
+	Name       string
+	Email      string
+	OAuthToken string
 }

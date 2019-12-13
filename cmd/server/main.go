@@ -1,10 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"os"
 
 	"github.com/storyscript/login/gh"
 	"github.com/storyscript/login/http"
+	"github.com/storyscript/login/postgres"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 )
@@ -19,12 +22,50 @@ func main() {
 			Endpoint:     github.Endpoint,
 		},
 	}
+
+	postgresClient := postgres.Client{
+		DB: openDB(),
+	}
+
 	server := http.Server{
 		TokenProvider:   ghOAuthClient,
 		UserInfoFetcher: ghClient,
+
+		UserRepository: postgresClient,
 	}
 
 	if err := server.Start(); err != nil {
 		panic(err)
 	}
+}
+
+func openDB() *sql.DB {
+	dbConnectionString := dbConnectionString()
+	dbDriver := "postgres"
+	db, err := sql.Open(dbDriver, dbConnectionString)
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}
+
+func dbConnectionString() string {
+	dbConnectionString := getEnvOrPanic("DB_CONNECTION_STRING")
+	sslMode := os.Getenv("SSL_MODE")
+
+	if sslMode == "" {
+		return dbConnectionString
+	}
+
+	return fmt.Sprintf("%s&sslmode=%s", getEnvOrPanic("DB_CONNECTION_STRING"), sslMode)
+}
+
+func getEnvOrPanic(env string) string {
+	value := os.Getenv(env)
+	if value == "" {
+		panic(fmt.Sprintf("Environment variable '%s' must be set", env))
+	}
+
+	return value
 }

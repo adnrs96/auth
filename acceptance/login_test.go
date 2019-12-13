@@ -2,57 +2,80 @@ package acceptance_test
 
 import (
 	"fmt"
-	"net/http"
+	"os"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/sclevine/agouti"
+	"github.com/storyscript/login/acceptance/helpers"
 )
 
-var _ = Describe("Logging In", func() {
+var _ = Describe("The Login Process", func() {
 	var (
 		session *gexec.Session
+
+		page *agouti.Page
+		db   helpers.Database
 	)
 
 	BeforeEach(func() {
+		db = helpers.NewDB(dbConnStr)
+
 		cmd := exec.Command(serverPath)
+		cmd.Env = append(os.Environ(), fmt.Sprintf("DB_CONNECTION_STRING=%s", dbConnStr))
 		session = execBin(cmd)
+
+		var err error
+		page, err = agoutiDriver.NewPage()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
+		db.PurgeOwnerByEmail(os.Getenv("ACCEPTANCE_EMAIL"))
+
+		Expect(page.Destroy()).To(Succeed())
 		session.Kill().Wait()
 	})
 
-	FWhen("the client has previously been authorised", func() {
-		// user -> login-server
-		// login-server redirecting the user to oauth provider
-		// oauth provider redirects the user to the login-server
-		// login-server requests details from the oauth provider (e.g. userid, email)
-		// login-server returns a token to the user
+	var pageURL = func() string {
+		url, err := page.URL()
+		Expect(err).NotTo(HaveOccurred())
+		return url
+	}
 
-		// test = user
-		// 1. Send a request to login-server
-		// 2. Redirect to oauth provider
-		// 3. Redirect to the login-server
-		// 4. Receive a token
+	When("the user has previously authorized a client", func() {
+		// Ensure that the user provided in the ACCEPTANCE_EMAIL env var has already authorized the client
+		// otherwise there will be an additional prompt the test doesn't handle
 
-		It("gets a token", func() {
+		When("going through the login flow", func() {
 
-			loginServerURL := "https://stories.storyscriptapp.com/github"
-			state := "random-id-for-now"
+			BeforeEach(func() {
+				Expect(page.Navigate("http://localhost:3000/login")).To(Succeed())
 
-			loginURL := fmt.Sprintf("%s?state=%s", loginServerURL, state)
+				Eventually(pageURL).Should(HavePrefix("https://github.com/login"))
+				loginToGitHub(page)
+			})
 
-			resp, err := http.Get(loginURL)
-			Expect(err).NotTo(HaveOccurred())
+			It("creates a token in the database associated with the user", func() {
+				Eventually(db.GetEmails).Should(HaveLen(1))
+				Expect(db.GetEmails()).To(ContainElement(os.Getenv("ACCEPTANCE_EMAIL")))
 
-			fmt.Println(resp.Header)
-
-			Expect(resp.StatusCode).To(Equal(302))
-
+				Eventually(func() string {
+					return db.GetTokenByEmail(os.Getenv("ACCEPTANCE_EMAIL"))
+				}).ShouldNot(BeEmpty())
+			})
 		})
-		//        request redirect url: "https://github.com/login/oauth/authorize" query: {"scope": "user:email", "state": state, "client_id": app.secrets.github_client_id, "redirect_uri": redirect_url}
-
 	})
 })
+
+func loginToGitHub(page *agouti.Page) {
+	userField := page.FindByName("login")
+	passwordField := page.FindByName("password")
+	loginButton := page.FindByName("commit")
+
+	Expect(userField.Fill(os.Getenv("ACCEPTANCE_EMAIL"))).To(Succeed())
+	Expect(passwordField.Fill(os.Getenv("ACCEPTANCE_PASSWORD"))).To(Succeed())
+	Expect(loginButton.Submit()).To(Succeed())
+}

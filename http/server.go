@@ -5,6 +5,8 @@ import "net/http"
 type Server struct {
 	TokenProvider   TokenProvider
 	UserInfoFetcher UserInfoFetcher
+
+	UserRepository UserRepository
 }
 
 func (s Server) Start() error {
@@ -15,6 +17,8 @@ func (s Server) Start() error {
 	callbackHandler := CallbackHandler{
 		TokenProvider:   s.TokenProvider,
 		UserInfoFetcher: s.UserInfoFetcher,
+
+		UserRepository: s.UserRepository,
 	}
 
 	var routes = []Route{
