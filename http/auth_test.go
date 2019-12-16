@@ -17,19 +17,43 @@ import (
 
 var _ = Describe("The auth handlers", func() {
 
-	var tokenProvider *httpfakes.FakeTokenProvider
+	var (
+		tokenProvider   *httpfakes.FakeTokenProvider
+		userInfoFetcher *httpfakes.FakeUserInfoFetcher
+		userRepository  *httpfakes.FakeUserRepository
+		tokenGenerator  *httpfakes.FakeTokenGenerator
+		server          Server
+
+		recorder *httptest.ResponseRecorder
+	)
 
 	BeforeEach(func() {
 		tokenProvider = &httpfakes.FakeTokenProvider{}
+		userInfoFetcher = &httpfakes.FakeUserInfoFetcher{}
+		userRepository = &httpfakes.FakeUserRepository{}
+		tokenGenerator = &httpfakes.FakeTokenGenerator{}
+
+		tokenProvider.GetAccessTokenReturns("fake-access-token", nil)
+		userInfoFetcher.GetUserReturns(login.User{
+			Name: "test-user-name",
+		}, nil)
+		userRepository.SaveReturns("fake-owner-uuid", nil)
+		tokenGenerator.GenerateReturns("fake-token", nil)
 		tokenProvider.GetConsentURLReturns("https://fake-consent-url.com")
+
+		server = Server{
+			TokenProvider:   tokenProvider,
+			UserInfoFetcher: userInfoFetcher,
+			UserRepository:  userRepository,
+			TokenGenerator:  tokenGenerator,
+		}
+
+		recorder = httptest.NewRecorder()
 	})
 
 	Describe("The login request handler", func() {
 		It("redirects to the consent URL", func() {
-			recorder := httptest.NewRecorder()
-			handler := LoginHandler{
-				TokenProvider: tokenProvider,
-			}
+			handler := http.HandlerFunc(server.HandleLogin)
 
 			request, err := http.NewRequest("GET", "/login", nil)
 			Expect(err).NotTo(HaveOccurred())
@@ -42,42 +66,14 @@ var _ = Describe("The auth handlers", func() {
 
 	Describe("the callback request handler", func() {
 
-		var (
-			userInfoFetcher *httpfakes.FakeUserInfoFetcher
-			userRepository  *httpfakes.FakeUserRepository
-			tokenGenerator  *httpfakes.FakeTokenGenerator
-
-			recorder *httptest.ResponseRecorder
-		)
-
-		BeforeEach(func() {
-			tokenProvider = &httpfakes.FakeTokenProvider{}
-			userInfoFetcher = &httpfakes.FakeUserInfoFetcher{}
-			userRepository = &httpfakes.FakeUserRepository{}
-			tokenGenerator = &httpfakes.FakeTokenGenerator{}
-
-			tokenProvider.GetAccessTokenReturns("fake-access-token", nil)
-			userInfoFetcher.GetUserReturns(login.User{
-				Name: "test-user-name",
-			}, nil)
-			userRepository.SaveReturns("fake-owner-uuid", nil)
-			tokenGenerator.GenerateReturns("fake-token", nil)
-		})
-
 		JustBeforeEach(func() {
-			handler := CallbackHandler{
-				TokenProvider:   tokenProvider,
-				UserInfoFetcher: userInfoFetcher,
-				UserRepository:  userRepository,
-				TokenGenerator:  tokenGenerator,
-			}
+			handler := http.HandlerFunc(server.HandleCallback)
 
 			formValues := url.Values{"code": {"fake-auth-code"}}
 			request, err := http.NewRequest("POST", "/callback", strings.NewReader(formValues.Encode()))
 			Expect(err).NotTo(HaveOccurred())
 			request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-			recorder = httptest.NewRecorder()
 			handler.ServeHTTP(recorder, request)
 		})
 

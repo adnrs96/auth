@@ -1,6 +1,10 @@
 package http
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
 
 type Server struct {
 	TokenProvider   TokenProvider
@@ -10,41 +14,43 @@ type Server struct {
 	TokenGenerator TokenGenerator
 }
 
+type route struct {
+	Name        string
+	Method      string
+	Pattern     string
+	HandlerFunc http.HandlerFunc
+}
+
 func (s Server) Start() error {
-	loginHandler := LoginHandler{
-		TokenProvider: s.TokenProvider,
-	}
-
-	callbackHandler := CallbackHandler{
-		TokenProvider:   s.TokenProvider,
-		UserInfoFetcher: s.UserInfoFetcher,
-
-		UserRepository: s.UserRepository,
-		TokenGenerator: s.TokenGenerator,
-	}
-
-	var routes = []Route{
-		Route{
+	var routes = []route{
+		{
 			"Login",
 			"GET",
 			"/login",
-			loginHandler,
+			s.HandleLogin,
 		},
-		Route{
+		{
 			"Callback",
 			"GET",
 			"/callback",
-			callbackHandler,
+			s.HandleCallback,
 		},
-		Route{
+		{
 			"Healthcheck",
 			"Get",
 			"/healthcheck",
-			HealthcheckHandler{},
+			s.HandleHealthcheck,
 		},
 	}
 
-	return http.ListenAndServe(":3000", NewRouter(routes))
-}
+	router := mux.NewRouter().StrictSlash(true)
+	for _, route := range routes {
+		router.
+			Methods(route.Method).
+			Path(route.Pattern).
+			Name(route.Name).
+			HandlerFunc(route.HandlerFunc)
+	}
 
-type OAuthHandler struct{}
+	return http.ListenAndServe(":3000", router)
+}

@@ -32,32 +32,20 @@ type TokenGenerator interface {
 	Generate(ownerUUID string) (string, error)
 }
 
-type LoginHandler struct {
-	TokenProvider TokenProvider
+func (s Server) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, s.TokenProvider.GetConsentURL("random-state"), http.StatusFound)
 }
 
-func (h LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, h.TokenProvider.GetConsentURL("random-state"), http.StatusFound)
-}
-
-type CallbackHandler struct {
-	TokenProvider   TokenProvider
-	UserInfoFetcher UserInfoFetcher
-
-	UserRepository UserRepository
-	TokenGenerator TokenGenerator
-}
-
-func (h CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s Server) HandleCallback(w http.ResponseWriter, r *http.Request) {
 	authCode := r.FormValue("code")
 
-	accessToken, err := h.TokenProvider.GetAccessToken(authCode)
+	accessToken, err := s.TokenProvider.GetAccessToken(authCode)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.UserInfoFetcher.GetUser(accessToken)
+	user, err := s.UserInfoFetcher.GetUser(accessToken)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -65,13 +53,13 @@ func (h CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	user.OAuthToken = accessToken
 
-	ownerUUID, err := h.UserRepository.Save(user)
+	ownerUUID, err := s.UserRepository.Save(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	token, err := h.TokenGenerator.Generate(ownerUUID)
+	token, err := s.TokenGenerator.Generate(ownerUUID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
