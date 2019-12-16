@@ -29,7 +29,7 @@ func main() {
 	}
 
 	jwtGenerator := jwt.Generator{
-		SigningKey: getEnvOrPanic("SECRET_KEY"),
+		SigningKey: getEnvOrPanic("JWT_SIGNING_KEY"),
 	}
 
 	server := http.Server{

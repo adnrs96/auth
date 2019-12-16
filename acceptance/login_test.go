@@ -81,7 +81,7 @@ var _ = Describe("The Login Process", func() {
 
 				var claims StoryscriptClaims
 				token, err := jwt.ParseWithClaims(cookie.Value, &claims, func(token *jwt.Token) (interface{}, error) {
-					return []byte(os.Getenv("SECRET_KEY")), nil
+					return []byte(os.Getenv("JWT_SIGNING_KEY")), nil
 				})
 				Expect(err).NotTo(HaveOccurred())
 
