@@ -7,6 +7,7 @@ type Server struct {
 	UserInfoFetcher UserInfoFetcher
 
 	UserRepository UserRepository
+	TokenGenerator TokenGenerator
 }
 
 func (s Server) Start() error {
@@ -19,6 +20,7 @@ func (s Server) Start() error {
 		UserInfoFetcher: s.UserInfoFetcher,
 
 		UserRepository: s.UserRepository,
+		TokenGenerator: s.TokenGenerator,
 	}
 
 	var routes = []Route{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/storyscript/login/gh"
 	"github.com/storyscript/login/http"
+	"github.com/storyscript/login/jwt"
 	"github.com/storyscript/login/postgres"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
@@ -27,11 +28,16 @@ func main() {
 		DB: openDB(),
 	}
 
+	jwtGenerator := jwt.Generator{
+		SigningKey: os.Getenv("SECRET_KEY"),
+	}
+
 	server := http.Server{
 		TokenProvider:   ghOAuthClient,
 		UserInfoFetcher: ghClient,
 
 		UserRepository: postgresClient,
+		TokenGenerator: jwtGenerator,
 	}
 
 	if err := server.Start(); err != nil {
