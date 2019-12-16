@@ -89,32 +89,6 @@ var _ = Describe("The Login Process", func() {
 
 				Expect(claims.Issuer).To(Equal("storyscript"))
 				Expect(claims.OwnerUUID).To(Equal(db.GetOwnerUUIDByEmail(os.Getenv("ACCEPTANCE_EMAIL"))))
-				Expect(claims.TokenUUID).To(Equal(db.GetTokenUUIDByOwnerUUID(claims.OwnerUUID)))
-
-				// Expect(claims.Secret).To(Equal(db.GetTokenByEmail(os.Getenv("ACCEPTANCE_EMAIL"))))
-
-				//	token :=jqt.NewWithClaims(jwt.SigningMethodHMC256)
-				//	ss, err := token.SignedString
-				//
-				//
-				//Calendar c = Calendar.getInstance();
-				// c.add(Calendar.YEAR, 1);
-				//
-				// Algorithm algorithm = Algorithm.HMAC256(Constants.JWT_COOKIE_SECRET_KEY);
-				// String token = JWT.create()
-				//         .withIssuer(Constants.JWT_ISSUER)
-				//         .withClaim(Constants.JWT_CLAIM_KEY_SECRET, SecretsUtil.hashTokenSecret(loginTokenSecret))
-				//         .withClaim(Constants.JWT_CLAIM_KEY_OWNER_UUID, owner.getId())
-				//         .withClaim(Constants.JWT_CLAIM_KEY_TOKEN_UUID, owner.getTokenUuid())
-				//         .withIssuedAt(new Date())
-				//         .withExpiresAt(c.getTime())
-				//         .sign(algorithm);
-				// final Cookie authCookie = new Cookie(Constants.JWT_COOKIE_NAME, token);
-				// authCookie.setHttpOnly(true);
-				// authCookie.setPath("/");
-				// authCookie.setDomain(Constants.HOST);
-				// authCookie.setMaxAge(60 * 60 * 24 * 365); // 1 year cookie - safety first
-				// res.addCookie(authCookie);
 			})
 		})
 	})
@@ -133,5 +107,4 @@ func loginToGitHub(page *agouti.Page) {
 type StoryscriptClaims struct {
 	jwt.StandardClaims
 	OwnerUUID string `json:"owner_uuid"`
-	TokenUUID string `json:"token_uuid"`
 }

@@ -4,15 +4,14 @@ package httpfakes
 import (
 	"sync"
 
-	"github.com/storyscript/login"
 	"github.com/storyscript/login/http"
 )
 
 type FakeTokenGenerator struct {
-	GenerateStub        func(login.User) (string, error)
+	GenerateStub        func(string) (string, error)
 	generateMutex       sync.RWMutex
 	generateArgsForCall []struct {
-		arg1 login.User
+		arg1 string
 	}
 	generateReturns struct {
 		result1 string
@@ -26,11 +25,11 @@ type FakeTokenGenerator struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTokenGenerator) Generate(arg1 login.User) (string, error) {
+func (fake *FakeTokenGenerator) Generate(arg1 string) (string, error) {
 	fake.generateMutex.Lock()
 	ret, specificReturn := fake.generateReturnsOnCall[len(fake.generateArgsForCall)]
 	fake.generateArgsForCall = append(fake.generateArgsForCall, struct {
-		arg1 login.User
+		arg1 string
 	}{arg1})
 	fake.recordInvocation("Generate", []interface{}{arg1})
 	fake.generateMutex.Unlock()
@@ -50,13 +49,13 @@ func (fake *FakeTokenGenerator) GenerateCallCount() int {
 	return len(fake.generateArgsForCall)
 }
 
-func (fake *FakeTokenGenerator) GenerateCalls(stub func(login.User) (string, error)) {
+func (fake *FakeTokenGenerator) GenerateCalls(stub func(string) (string, error)) {
 	fake.generateMutex.Lock()
 	defer fake.generateMutex.Unlock()
 	fake.GenerateStub = stub
 }
 
-func (fake *FakeTokenGenerator) GenerateArgsForCall(i int) login.User {
+func (fake *FakeTokenGenerator) GenerateArgsForCall(i int) string {
 	fake.generateMutex.RLock()
 	defer fake.generateMutex.RUnlock()
 	argsForCall := fake.generateArgsForCall[i]

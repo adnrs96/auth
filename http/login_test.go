@@ -60,6 +60,7 @@ var _ = Describe("The auth handlers", func() {
 			userInfoFetcher.GetUserReturns(login.User{
 				Name: "test-user-name",
 			}, nil)
+			userRepository.SaveReturns("fake-owner-uuid", nil)
 			tokenGenerator.GenerateReturns("fake-token", nil)
 		})
 
@@ -100,10 +101,7 @@ var _ = Describe("The auth handlers", func() {
 
 		It("generates a token for the user", func() {
 			Expect(tokenGenerator.GenerateCallCount()).NotTo(BeZero())
-			Expect(tokenGenerator.GenerateArgsForCall(0)).To(Equal(login.User{
-				Name:       "test-user-name",
-				OAuthToken: "fake-access-token",
-			}))
+			Expect(tokenGenerator.GenerateArgsForCall(0)).To(Equal("fake-owner-uuid"))
 		})
 
 		It("sets a cookie containing the token", func() {
@@ -139,7 +137,7 @@ var _ = Describe("The auth handlers", func() {
 
 		When("saving a user fails", func() {
 			BeforeEach(func() {
-				userRepository.SaveReturns(errors.New("explode"))
+				userRepository.SaveReturns("", errors.New("explode"))
 			})
 
 			It("returns a 500 Internal Server Error", func() {

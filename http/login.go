@@ -24,13 +24,13 @@ type UserInfoFetcher interface {
 //go:generate counterfeiter . UserRepository
 
 type UserRepository interface {
-	Save(user login.User) error
+	Save(user login.User) (string, error)
 }
 
 //go:generate counterfeiter . TokenGenerator
 
 type TokenGenerator interface {
-	Generate(user login.User) (string, error)
+	Generate(ownerUUID string) (string, error)
 }
 
 type LoginHandler struct {
@@ -44,7 +44,6 @@ func (h LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 type StoryscriptClaims struct {
 	jwt.StandardClaims
 	OwnerUUID string `json:"owner_uuid"`
-	TokenUUID string `json:"token_uuid"`
 }
 
 type CallbackHandler struct {
@@ -72,35 +71,18 @@ func (h CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	user.OAuthToken = accessToken
 
-	if err := h.UserRepository.Save(user); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	token, err := h.TokenGenerator.Generate(user)
+	ownerUUID, err := h.UserRepository.Save(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	//
-	// claims := StoryscriptClaims{
-	// 	StandardClaims: jwt.StandardClaims{
-	// 		Issuer:    "storyscript",
-	// 		IssuedAt:  time.Now().UTC().Unix(),
-	// 		ExpiresAt: time.Now().Add(60 * 60 * 24 * 365).UTC().Unix(),
-	// 	},
-	// 	OwnerUUID: ownerUUID,
-	// 	TokenUUID: tokenUUID,
-	// }
-	//
-	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	//
-	// fmt.Println(os.Getenv("SECRET_KEY"))
-	//
+
+	token, err := h.TokenGenerator.Generate(ownerUUID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "storyscript-access-token",
 		Path:     "/",

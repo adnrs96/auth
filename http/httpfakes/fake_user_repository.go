@@ -9,22 +9,24 @@ import (
 )
 
 type FakeUserRepository struct {
-	SaveStub        func(login.User) error
+	SaveStub        func(login.User) (string, error)
 	saveMutex       sync.RWMutex
 	saveArgsForCall []struct {
 		arg1 login.User
 	}
 	saveReturns struct {
-		result1 error
+		result1 string
+		result2 error
 	}
 	saveReturnsOnCall map[int]struct {
-		result1 error
+		result1 string
+		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeUserRepository) Save(arg1 login.User) error {
+func (fake *FakeUserRepository) Save(arg1 login.User) (string, error) {
 	fake.saveMutex.Lock()
 	ret, specificReturn := fake.saveReturnsOnCall[len(fake.saveArgsForCall)]
 	fake.saveArgsForCall = append(fake.saveArgsForCall, struct {
@@ -36,10 +38,10 @@ func (fake *FakeUserRepository) Save(arg1 login.User) error {
 		return fake.SaveStub(arg1)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
 	fakeReturns := fake.saveReturns
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeUserRepository) SaveCallCount() int {
@@ -48,7 +50,7 @@ func (fake *FakeUserRepository) SaveCallCount() int {
 	return len(fake.saveArgsForCall)
 }
 
-func (fake *FakeUserRepository) SaveCalls(stub func(login.User) error) {
+func (fake *FakeUserRepository) SaveCalls(stub func(login.User) (string, error)) {
 	fake.saveMutex.Lock()
 	defer fake.saveMutex.Unlock()
 	fake.SaveStub = stub
@@ -61,27 +63,30 @@ func (fake *FakeUserRepository) SaveArgsForCall(i int) login.User {
 	return argsForCall.arg1
 }
 
-func (fake *FakeUserRepository) SaveReturns(result1 error) {
+func (fake *FakeUserRepository) SaveReturns(result1 string, result2 error) {
 	fake.saveMutex.Lock()
 	defer fake.saveMutex.Unlock()
 	fake.SaveStub = nil
 	fake.saveReturns = struct {
-		result1 error
-	}{result1}
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeUserRepository) SaveReturnsOnCall(i int, result1 error) {
+func (fake *FakeUserRepository) SaveReturnsOnCall(i int, result1 string, result2 error) {
 	fake.saveMutex.Lock()
 	defer fake.saveMutex.Unlock()
 	fake.SaveStub = nil
 	if fake.saveReturnsOnCall == nil {
 		fake.saveReturnsOnCall = make(map[int]struct {
-			result1 error
+			result1 string
+			result2 error
 		})
 	}
 	fake.saveReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeUserRepository) Invocations() map[string][][]interface{} {
