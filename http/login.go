@@ -1,9 +1,7 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -17,12 +15,22 @@ type TokenProvider interface {
 	GetAccessToken(authCode string) (string, error)
 }
 
+//go:generate counterfeiter . UserInfoFetcher
+
 type UserInfoFetcher interface {
 	GetUser(accessToken string) (login.User, error)
 }
 
+//go:generate counterfeiter . UserRepository
+
 type UserRepository interface {
-	Save(user login.User) (string, string, error)
+	Save(user login.User) error
+}
+
+//go:generate counterfeiter . TokenGenerator
+
+type TokenGenerator interface {
+	Generate(user login.User) (string, error)
 }
 
 type LoginHandler struct {
@@ -44,47 +52,63 @@ type CallbackHandler struct {
 	UserInfoFetcher UserInfoFetcher
 
 	UserRepository UserRepository
+	TokenGenerator TokenGenerator
 }
 
 func (h CallbackHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// state := r.FormValue("state")
 	authCode := r.FormValue("code")
 
-	// check state is valid
+	accessToken, err := h.TokenProvider.GetAccessToken(authCode)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	accessToken, _ := h.TokenProvider.GetAccessToken(authCode)
-	user, _ := h.UserInfoFetcher.GetUser(accessToken)
+	user, err := h.UserInfoFetcher.GetUser(accessToken)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	user.Name = "will"
 	user.OAuthToken = accessToken
 
-	ownerUUID, tokenUUID, _ := h.UserRepository.Save(user)
-
-	claims := StoryscriptClaims{
-		StandardClaims: jwt.StandardClaims{
-			Issuer:    "storyscript",
-			IssuedAt:  time.Now().UTC().Unix(),
-			ExpiresAt: time.Now().Add(60 * 60 * 24 * 365).UTC().Unix(),
-		},
-		OwnerUUID: ownerUUID,
-		TokenUUID: tokenUUID,
+	if err := h.UserRepository.Save(user); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	token, err := h.TokenGenerator.Generate(user)
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-
-	fmt.Println(os.Getenv("SECRET_KEY"))
-
+	//
+	// claims := StoryscriptClaims{
+	// 	StandardClaims: jwt.StandardClaims{
+	// 		Issuer:    "storyscript",
+	// 		IssuedAt:  time.Now().UTC().Unix(),
+	// 		ExpiresAt: time.Now().Add(60 * 60 * 24 * 365).UTC().Unix(),
+	// 	},
+	// 	OwnerUUID: ownerUUID,
+	// 	TokenUUID: tokenUUID,
+	// }
+	//
+	// token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	// tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	//
+	// fmt.Println(os.Getenv("SECRET_KEY"))
+	//
 	http.SetCookie(w, &http.Cookie{
-		Name:     "storyscript-jwt",
+		Name:     "storyscript-access-token",
 		Path:     "/",
 		Expires:  time.Now().Add(time.Hour * 24 * 365),
 		MaxAge:   60 * 60 * 24 * 365,
 		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
 
-		Value: tokenString,
+		Value: token,
 	})
 }

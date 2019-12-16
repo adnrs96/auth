@@ -74,7 +74,7 @@ var _ = Describe("The Login Process", func() {
 				Expect(err).NotTo(HaveOccurred())
 				cookie := cookies[0]
 
-				Expect(cookie.Name).To(Equal("storyscript-jwt"))
+				Expect(cookie.Name).To(Equal("storyscript-access-token"))
 				Expect(cookie.Path).To(Equal("/"))
 				Expect(cookie.Expires).To(BeTemporally("~", time.Now().Add(time.Hour*24*365), time.Minute))
 				Expect(cookie.HttpOnly).To(BeTrue())
