@@ -69,7 +69,7 @@ var _ = Describe("The Login Process", func() {
 				}).ShouldNot(BeEmpty())
 			})
 
-			FIt("sets a cookie containing a JWT token", func() {
+			It("sets a cookie containing a JWT token", func() {
 				cookies, err := page.GetCookies()
 				Expect(err).NotTo(HaveOccurred())
 				cookie := cookies[0]

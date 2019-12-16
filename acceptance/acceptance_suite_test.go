@@ -35,7 +35,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	agoutiDriver = agouti.ChromeDriver(agouti.ChromeOptions("args", []string{
-		// "--headless",
+		"--headless",
 		"--no-sandbox",
 		"--disable-gpu"}))
 	Expect(agoutiDriver.Start()).To(Succeed())
