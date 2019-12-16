@@ -1,7 +1,7 @@
 FROM golang:alpine AS builder
 
-COPY . /login
-WORKDIR /login/cmd/server
+COPY . /auth
+WORKDIR /auth/cmd/server
 
 ENV GO111MODULE=on
 RUN CGO_ENABLED=0 GOOS=linux go build -mod vendor -a -installsuffix nocgo -o /server .
