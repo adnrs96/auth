@@ -15,7 +15,7 @@ var _ = Describe("The healthcheck handler", func() {
 		recorder := httptest.NewRecorder()
 		handler := HealthcheckHandler{}
 
-		request, err := http.NewRequest("GET", "http://localhost:3000/healthcheck", nil)
+		request, err := http.NewRequest("GET", "/healthcheck", nil)
 		Expect(err).NotTo(HaveOccurred())
 
 		handler.ServeHTTP(recorder, request)

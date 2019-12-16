@@ -10,6 +10,8 @@ import (
 	"github.com/storyscript/login"
 )
 
+//go:generate counterfeiter . TokenProvider
+
 type TokenProvider interface {
 	GetConsentURL(state string) string
 	GetAccessToken(authCode string) (string, error)
