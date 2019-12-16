@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/storyscript/login"
 )
 
@@ -39,11 +38,6 @@ type LoginHandler struct {
 
 func (h LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.TokenProvider.GetConsentURL("random-state"), http.StatusFound)
-}
-
-type StoryscriptClaims struct {
-	jwt.StandardClaims
-	OwnerUUID string `json:"owner_uuid"`
 }
 
 type CallbackHandler struct {
