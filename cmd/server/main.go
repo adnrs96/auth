@@ -17,8 +17,8 @@ func main() {
 	ghClient := gh.UserClient{}
 	ghOAuthClient := gh.OAuthClient{
 		Config: &oauth2.Config{
-			ClientID:     os.Getenv("GH_CLIENT_ID"),
-			ClientSecret: os.Getenv("GH_CLIENT_SECRET"),
+			ClientID:     getEnvOrPanic("GH_CLIENT_ID"),
+			ClientSecret: getEnvOrPanic("GH_CLIENT_SECRET"),
 			Scopes:       []string{"user:email"},
 			Endpoint:     github.Endpoint,
 		},
@@ -29,7 +29,7 @@ func main() {
 	}
 
 	jwtGenerator := jwt.Generator{
-		SigningKey: os.Getenv("SECRET_KEY"),
+		SigningKey: getEnvOrPanic("SECRET_KEY"),
 	}
 
 	server := http.Server{
@@ -64,7 +64,7 @@ func dbConnectionString() string {
 		return dbConnectionString
 	}
 
-	return fmt.Sprintf("%s&sslmode=%s", getEnvOrPanic("DB_CONNECTION_STRING"), sslMode)
+	return fmt.Sprintf("%s&sslmode=%s", dbConnectionString, sslMode)
 }
 
 func getEnvOrPanic(env string) string {
