@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 
 	"github.com/storyscript/login"
 )
@@ -22,18 +23,18 @@ func (c Client) Save(user login.User) (string, error) {
 		user.Email,
 		user.OAuthToken)
 	if err != nil {
-		panic(err)
+		return "", errors.Wrap(err, "failed to save user")
 	}
 
-	ownerUUID, err := c.GetOwnerUUIDByEmail(user.Email)
+	ownerUUID, err := c.getOwnerUUIDByEmail(user.Email)
 	if err != nil {
-		panic(err)
+		return "", errors.Wrap(err, "failed to get ownerUUID")
 	}
 
 	return ownerUUID, nil
 }
 
-func (c Client) GetOwnerUUIDByEmail(email string) (string, error) {
+func (c Client) getOwnerUUIDByEmail(email string) (string, error) {
 	return c.getRow("SELECT owner_uuid FROM owner_emails WHERE email = $1;", email)
 }
 

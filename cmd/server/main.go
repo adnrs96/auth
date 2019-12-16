@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	ghClient := gh.Client{}
+	ghClient := gh.UserClient{}
 	ghOAuthClient := gh.OAuthClient{
 		Config: &oauth2.Config{
 			ClientID:     os.Getenv("GH_CLIENT_ID"),
