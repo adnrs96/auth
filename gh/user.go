@@ -34,12 +34,12 @@ func (c UserClient) GetUser(accessToken string) (login.User, error) {
 func getUser(accessToken string) (user, error) {
 	body, err := getWithAuth("https://api.github.com/user", accessToken)
 	if err != nil {
-		return user{}, fmt.Errorf("failed creating user request: %s", err.Error())
+		return user{}, errors.Wrap(err, "failed to get user details")
 	}
 
 	var u user
 	if err := json.Unmarshal(body, &u); err != nil {
-		return user{}, fmt.Errorf("could not unmarshal response: %s", err.Error())
+		return user{}, errors.Wrap(err, "failed to unmarshal response: %s")
 	}
 
 	return u, nil
@@ -48,12 +48,12 @@ func getUser(accessToken string) (user, error) {
 func getPrimaryEmail(accessToken string) (string, error) {
 	body, err := getWithAuth("https://api.github.com/user/emails", accessToken)
 	if err != nil {
-		return "", errors.Wrap(err, "could not get emails")
+		return "", errors.Wrap(err, "failed to get emails")
 	}
 
 	var emails userEmails
 	if err := json.Unmarshal(body, &emails); err != nil {
-		return "", fmt.Errorf("could not unmarshal response: %s", err.Error())
+		return "", errors.Wrap(err, "failed to unmarshal response: %s")
 	}
 
 	return emails[0].Email, nil
