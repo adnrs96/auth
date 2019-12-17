@@ -35,10 +35,9 @@ var _ = Describe("The Login Process", func() {
 	})
 
 	AfterEach(func() {
-		db.PurgeOwnerByEmail(os.Getenv("ACCEPTANCE_EMAIL"))
-
-		Expect(page.Destroy()).To(Succeed())
 		session.Kill().Wait()
+		Expect(page.Destroy()).To(Succeed())
+		db.PurgeOwnerByEmail(os.Getenv("ACCEPTANCE_EMAIL"))
 	})
 
 	var pageURL = func() string {
