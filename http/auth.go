@@ -1,7 +1,9 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/storyscript/auth"
@@ -41,12 +43,14 @@ func (s Server) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	accessToken, err := s.TokenProvider.GetAccessToken(authCode)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	user, err := s.UserInfoFetcher.GetUser(accessToken)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -55,12 +59,14 @@ func (s Server) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	ownerUUID, err := s.UserRepository.Save(user)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	token, err := s.TokenGenerator.Generate(ownerUUID)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
