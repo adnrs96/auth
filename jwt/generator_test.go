@@ -28,7 +28,7 @@ var _ = Describe("JWT Generator", func() {
 
 		Expect(claims.Issuer).To(Equal("storyscript"))
 		Expect(claims.IssuedAt).To(BeNumerically("~", time.Now().UTC().Unix(), 100))
-		Expect(claims.ExpiresAt).To(BeNumerically("~", time.Now().Add(60*60*24*365).UTC().Unix(), 100))
+		Expect(claims.ExpiresAt).To(BeNumerically("~", time.Now().Add(time.Hour*24*365).UTC().Unix(), 100))
 		Expect(claims.OwnerUUID).To(Equal("fake-owner-uuid"))
 	})
 })

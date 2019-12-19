@@ -15,7 +15,7 @@ func (g Generator) Generate(ownerUUID string) (string, error) {
 		StandardClaims: jwt.StandardClaims{
 			Issuer:    "storyscript",
 			IssuedAt:  time.Now().UTC().Unix(),
-			ExpiresAt: time.Now().Add(60 * 60 * 24 * 365).UTC().Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * 24 * 365).UTC().Unix(),
 		},
 		OwnerUUID: ownerUUID,
 	}
