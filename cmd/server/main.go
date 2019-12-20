@@ -39,7 +39,8 @@ func main() {
 		UserRepository: postgresClient,
 		TokenGenerator: jwtGenerator,
 
-		Domain: getEnvOrPanic("DOMAIN"),
+		Domain:      getEnvOrPanic("DOMAIN"),
+		RedirectURI: getEnvOrPanic("POST_LOGIN_REDIRECT_URI"),
 	}
 
 	if err := server.Start(); err != nil {

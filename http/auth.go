@@ -82,4 +82,6 @@ func (s Server) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 		Value: token,
 	})
+
+	http.Redirect(w, r, s.RedirectURI, http.StatusFound)
 }

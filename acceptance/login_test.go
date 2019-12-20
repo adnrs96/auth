@@ -90,6 +90,10 @@ var _ = Describe("The Login Process", func() {
 				Expect(claims.Issuer).To(Equal("storyscript"))
 				Expect(claims.OwnerUUID).To(Equal(db.GetOwnerUUIDByEmail(os.Getenv("ACCEPTANCE_EMAIL"))))
 			})
+
+			It("redirects to the provided redirect URI after login", func() {
+				Eventually(pageURL).Should(Equal(os.Getenv("POST_LOGIN_REDIRECT_URI")))
+			})
 		})
 	})
 })

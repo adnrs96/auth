@@ -47,7 +47,8 @@ var _ = Describe("The auth handlers", func() {
 			UserRepository:  userRepository,
 			TokenGenerator:  tokenGenerator,
 
-			Domain: "test-domain",
+			Domain:      "test-domain",
+			RedirectURI: "http://test-redirect-uri",
 		}
 
 		recorder = httptest.NewRecorder()
@@ -112,6 +113,11 @@ var _ = Describe("The auth handlers", func() {
 			Expect(cookie.HttpOnly).To(BeTrue())
 			Expect(cookie.SameSite).To(Equal(http.SameSiteStrictMode))
 			Expect(cookie.Value).To(Equal("fake-token"))
+		})
+
+		It("redirects to the provided URI", func() {
+			Expect(recorder.Code).To(Equal(http.StatusFound))
+			Expect(recorder.Header().Get("Location")).To(Equal("http://test-redirect-uri"))
 		})
 
 		When("fetching an access token fails", func() {

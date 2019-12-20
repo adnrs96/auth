@@ -13,7 +13,8 @@ type Server struct {
 	UserRepository UserRepository
 	TokenGenerator TokenGenerator
 
-	Domain string
+	Domain      string
+	RedirectURI string
 }
 
 type route struct {
