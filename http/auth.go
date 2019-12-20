@@ -73,6 +73,7 @@ func (s Server) HandleCallback(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "storyscript-access-token",
+		Domain:   s.Domain,
 		Path:     "/",
 		Expires:  time.Now().Add(time.Hour * 24 * 365),
 		MaxAge:   60 * 60 * 24 * 365,

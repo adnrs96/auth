@@ -38,6 +38,8 @@ func main() {
 
 		UserRepository: postgresClient,
 		TokenGenerator: jwtGenerator,
+
+		Domain: getEnvOrPanic("DOMAIN"),
 	}
 
 	if err := server.Start(); err != nil {

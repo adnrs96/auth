@@ -46,6 +46,8 @@ var _ = Describe("The auth handlers", func() {
 			UserInfoFetcher: userInfoFetcher,
 			UserRepository:  userRepository,
 			TokenGenerator:  tokenGenerator,
+
+			Domain: "test-domain",
 		}
 
 		recorder = httptest.NewRecorder()
@@ -104,6 +106,7 @@ var _ = Describe("The auth handlers", func() {
 			cookie := recorder.Result().Cookies()[0]
 
 			Expect(cookie.Name).To(Equal("storyscript-access-token"))
+			Expect(cookie.Domain).To(Equal("test-domain"))
 			Expect(cookie.Path).To(Equal("/"))
 			Expect(cookie.Expires).To(BeTemporally("~", time.Now().Add(time.Hour*24*365), time.Minute))
 			Expect(cookie.HttpOnly).To(BeTrue())

@@ -77,6 +77,7 @@ var _ = Describe("The Login Process", func() {
 				Expect(cookie.Path).To(Equal("/"))
 				Expect(cookie.Expires).To(BeTemporally("~", time.Now().Add(time.Hour*24*365), time.Minute))
 				Expect(cookie.HttpOnly).To(BeTrue())
+				Expect(cookie.Domain).To(Equal(os.Getenv("DOMAIN")))
 
 				var claims StoryscriptClaims
 				token, err := jwt.ParseWithClaims(cookie.Value, &claims, func(token *jwt.Token) (interface{}, error) {
